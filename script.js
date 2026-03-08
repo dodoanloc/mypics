@@ -283,16 +283,12 @@ function renderEventSelect() {
     elements.eventSelect.innerHTML = options;
 }
 
-// Check admin status (for demo)
+// Check admin status
 function checkAdminStatus() {
-    // In production, this would be handled by authentication
-    // For demo, we'll use a simple check
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('admin') === 'true') {
-        elements.adminLink.style.display = 'inline-block';
-        elements.adminLogin.style.display = 'block';
-        elements.adminDashboard.style.display = 'none';
-    }
+    // Always show admin entry; access is still protected by login credentials.
+    elements.adminLink.style.display = 'inline-block';
+    elements.adminLogin.style.display = 'block';
+    elements.adminDashboard.style.display = 'none';
 }
 
 // Handle admin login
