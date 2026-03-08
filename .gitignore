@@ -1,0 +1,15 @@
+# Node modules
+node_modules/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# Local storage files (for demo)
+agribank-mypics-data
+
+# IDE files
+.vscode/
+.idea/

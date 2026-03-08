@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agribank Thọ Xuân - Nộp Kết Quả Thi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">🏦</div>
+                <h1>Agribank Thọ Xuân</h1>
+            </div>
+            <nav class="nav">
+                <a href="#home" class="active">Trang Chủ</a>
+                <a href="#events">Sự Kiện</a>
+                <a href="#upload">Nộp Ảnh</a>
+                <a href="#admin" id="admin-link">Quản Trị</a>
+            </nav>
+        </header>
+
+        <!-- Hero Section -->
+        <section id="home" class="hero">
+            <h2>Nộp Kết Quả Thi</h2>
+            <p>Vui lòng nộp ảnh chụp kết quả thi của bạn theo hướng dẫn bên dưới</p>
+            <div class="cta-buttons">
+                <a href="#upload" class="btn btn-primary">Nộp Ảnh Ngay</a>
+                <a href="#events" class="btn btn-outline">Xem Sự Kiện</a>
+            </div>
+        </section>
+
+        <!-- Events Section -->
+        <section id="events" class="section">
+            <h2>Sự Kiện Đang Diễn Ra</h2>
+            <div class="events-grid" id="events-list">
+                <!-- Events will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Upload Section -->
+        <section id="upload" class="section">
+            <h2>Nộp Ảnh Kết Quả Thi</h2>
+            <div class="upload-card">
+                <div class="upload-instructions">
+                    <h3>Hướng dẫn nộp ảnh:</h3>
+                    <ol>
+                        <li>Chọn sự kiện bạn muốn nộp ảnh</li>
+                        <li>Chọn ảnh chụp kết quả thi (định dạng JPG/PNG)</li>
+                        <li>Nhập thông tin cá nhân (Họ và tên, Số CMND/CCCD)</li>
+                        <li>Nhấn "Gửi Ảnh"</li>
+                    </ol>
+                </div>
+                
+                <div class="upload-form">
+                    <div class="form-group">
+                        <label for="event-select">Chọn Sự Kiện:</label>
+                        <select id="event-select">
+                            <option value="">-- Chọn sự kiện --</option>
+                            <!-- Events will be populated here -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="upload-file">Chọn Ảnh:</label>
+                        <input type="file" id="upload-file" accept="image/*">
+                        <div class="file-info" id="file-info">Chưa chọn tệp</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="staff-select">Chọn Cán Bộ:</label>
+                        <select id="staff-select">
+                            <option value="">-- Chọn cán bộ --</option>
+                            <!-- Staff list will be populated here -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id-number">Số CMND/CCCD:</label>
+                        <input type="text" id="id-number" placeholder="Nhập số CMND hoặc CCCD">
+                    </div>
+                    
+                    <button id="submit-btn" class="btn btn-primary">Gửi Ảnh</button>
+                    <div id="upload-status"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Section -->
+        <section id="admin" class="section admin-section" style="display: none;">
+            <h2>Quản Trị Hệ Thống</h2>
+            
+            <!-- Admin Login -->
+            <div id="admin-login" class="admin-panel">
+                <h3>Đăng Nhập Quản Trị</h3>
+                <div class="form-group">
+                    <label for="admin-username">Tên đăng nhập:</label>
+                    <input type="text" id="admin-username" placeholder="Nhập tên đăng nhập">
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Mật khẩu:</label>
+                    <input type="password" id="admin-password" placeholder="Nhập mật khẩu">
+                </div>
+                <button id="login-btn" class="btn btn-primary">Đăng Nhập</button>
+                <div id="login-message"></div>
+            </div>
+            
+            <!-- Admin Dashboard -->
+            <div id="admin-dashboard" style="display: none;">
+                <div class="admin-actions">
+                    <button id="create-event-btn" class="btn btn-secondary">Tạo Sự Kiện Mới</button>
+                    <button id="download-all-btn" class="btn btn-success">Tải Xuống Tất Cả Ảnh</button>
+                </div>
+                
+                <!-- Event Creation Form -->
+                <div id="create-event-form" style="display: none;">
+                    <h3>Tạo Sự Kiện Mới</h3>
+                    <div class="form-group">
+                        <label for="event-title">Tiêu đề Sự Kiện:</label>
+                        <input type="text" id="event-title" placeholder="Ví dụ: Kỳ Thi Năm 2026">
+                    </div>
+                    <div class="form-group">
+                        <label for="event-description">Mô tả:</label>
+                        <textarea id="event-description" placeholder="Mô tả sự kiện..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-deadline">Ngày Hết Hạn:</label>
+                        <input type="date" id="event-deadline">
+                    </div>
+                    <div class="form-group">
+                        <label for="event-status">Trạng thái:</label>
+                        <select id="event-status">
+                            <option value="active">Đang hoạt động</option>
+                            <option value="closed">Đã đóng</option>
+                        </select>
+                    </div>
+                    <button id="save-event-btn" class="btn btn-primary">Lưu Sự Kiện</button>
+                    <button id="cancel-event-btn" class="btn btn-outline">Huỷ</button>
+                </div>
+                
+                <!-- Progress Tracking -->
+                <div class="progress-section">
+                    <h3>Tiến Độ Nộp Ảnh</h3>
+                    <div id="progress-cards" class="progress-cards">
+                        <!-- Progress cards will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2026 Agribank Chi nhánh Thọ Xuân. Mọi quyền được bảo lưu.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

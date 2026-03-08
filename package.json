@@ -1,0 +1,17 @@
+{
+  "name": "agribank-mypics",
+  "version": "1.0.0",
+  "description": "Hệ thống nộp ảnh kết quả thi cho Agribank Thọ Xuân",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "echo \"Test not implemented\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dodoanloc/mypics.git"
+  },
+  "keywords": ["agribank", "tho-xuan", "upload", "photos"],
+  "author": "Dò Dò An",
+  "license": "MIT"
+}
