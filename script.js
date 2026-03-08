@@ -37,18 +37,53 @@ const elements = {
     progressCards: document.getElementById('progress-cards')
 };
 
-// Staff list (sample data - replace with actual staff list from your system)
+// Staff list (Agribank Thọ Xuân - updated from provided list)
 const staffList = [
-    { id: '1', name: 'Nguyễn Văn A', idNumber: '123456789' },
-    { id: '2', name: 'Trần Thị B', idNumber: '987654321' },
-    { id: '3', name: 'Lê Văn C', idNumber: '456789123' },
-    { id: '4', name: 'Phạm Thị D', idNumber: '135792468' },
-    { id: '5', name: 'Hoàng Văn E', idNumber: '246813579' },
-    { id: '6', name: 'Đỗ Thị F', idNumber: '975318642' },
-    { id: '7', name: 'Vũ Văn G', idNumber: '864209753' },
-    { id: '8', name: 'Bùi Thị H', idNumber: '753198642' },
-    { id: '9', name: 'Đặng Văn I', idNumber: '642087531' },
-    { id: '10', name: 'Tạ Thị J', idNumber: '531976420' }
+    { id: '1', name: 'Nguyễn Quốc Huy', idNumber: 'CMND_001' },
+    { id: '2', name: 'Đỗ Văn Nam', idNumber: 'CMND_002' },
+    { id: '3', name: 'Nguyễn Chí Thanh', idNumber: 'CMND_003' },
+    { id: '4', name: 'Đỗ Doãn Lộc', idNumber: 'CMND_004' },
+    { id: '5', name: 'Nguyễn Thị Như Quỳnh', idNumber: 'CMND_005' },
+    { id: '6', name: 'Nguyễn Thị Hòa', idNumber: 'CMND_006' },
+    { id: '7', name: 'Đàm Thị Thu Phương', idNumber: 'CMND_007' },
+    { id: '8', name: 'Trịnh Thị Hường', idNumber: 'CMND_008' },
+    { id: '9', name: 'Lê Thanh Xuân', idNumber: 'CMND_009' },
+    { id: '10', name: 'Nguyễn Thị Quyên', idNumber: 'CMND_010' },
+    { id: '11', name: 'Lê Nam Phượng', idNumber: 'CMND_011' },
+    { id: '12', name: 'Lê Thị Oanh', idNumber: 'CMND_012' },
+    { id: '13', name: 'Đoàn Thị Dịu', idNumber: 'CMND_013' },
+    { id: '14', name: 'Nguyễn Diệu Linh', idNumber: 'CMND_014' },
+    { id: '15', name: 'Nguyễn Ngọc Tú', idNumber: 'CMND_015' },
+    { id: '16', name: 'Đỗ Quang Huy', idNumber: 'CMND_016' },
+    { id: '17', name: 'Nguyễn Văn Sơn', idNumber: 'CMND_017' },
+    { id: '18', name: 'Đỗ Tuấn Minh', idNumber: 'CMND_018' },
+    { id: '19', name: 'Hà Sĩ Dũng', idNumber: 'CMND_019' },
+    { id: '20', name: 'Lê Thị Giang', idNumber: 'CMND_020' },
+    { id: '21', name: 'Đỗ Tuấn Anh', idNumber: 'CMND_021' },
+    { id: '22', name: 'Vũ Xuân Trường', idNumber: 'CMND_022' },
+    { id: '23', name: 'Lê Thị Uyên', idNumber: 'CMND_023' },
+    { id: '24', name: 'Đỗ Thị Ngọc Anh', idNumber: 'CMND_024' },
+    { id: '25', name: 'Đỗ Thị Trang', idNumber: 'CMND_025' },
+    { id: '26', name: 'Nguyễn Trịnh', idNumber: 'CMND_026' },
+    { id: '27', name: 'Phương Thảo', idNumber: 'CMND_027' },
+    { id: '28', name: 'Lê Thu Phương', idNumber: 'CMND_028' },
+    { id: '29', name: 'Lê Thị Diễm Quỳnh', idNumber: 'CMND_029' },
+    { id: '30', name: 'Nguyễn Quốc', idNumber: 'CMND_030' },
+    { id: '31', name: 'Vương Linh', idNumber: 'CMND_031' },
+    { id: '32', name: 'Trịnh Ngọc Nam', idNumber: 'CMND_032' },
+    { id: '33', name: 'Trịnh Quang Dũng', idNumber: 'CMND_033' },
+    { id: '34', name: 'Nguyễn Thị Hạnh', idNumber: 'CMND_034' },
+    { id: '35', name: 'Lê Thị Nga', idNumber: 'CMND_035' },
+    { id: '36', name: 'Mai Thị Huyền', idNumber: 'CMND_036' },
+    { id: '37', name: 'Phùng Lê Diệu Linh', idNumber: 'CMND_037' },
+    { id: '38', name: 'Hoàng Thị Lê', idNumber: 'CMND_038' },
+    { id: '39', name: 'Lý Thị Ngọc Mai', idNumber: 'CMND_039' },
+    { id: '40', name: 'Hoàng Thị Minh', idNumber: 'CMND_040' },
+    { id: '41', name: 'Mai Thị Lan Anh', idNumber: 'CMND_041' },
+    { id: '42', name: 'Lê Xuân Quý', idNumber: 'CMND_042' },
+    { id: '43', name: 'Đặng Thị Hảo', idNumber: 'CMND_043' },
+    { id: '44', name: 'Trần Thị Hồ Lan', idNumber: 'CMND_044' },
+    { id: '45', name: 'Phạm Văn Khoa', idNumber: 'CMND_045' }
 ];
 
 // Initialize the app
@@ -536,8 +571,8 @@ window.onload = function() {
                 id: 's1',
                 eventId: '1',
                 staffId: '1',
-                fullName: 'Nguyễn Văn A',
-                idNumber: '123456789',
+                fullName: 'Nguyễn Quốc Huy',
+                idNumber: 'CMND_001',
                 timestamp: '2026-03-08T12:30:00Z',
                 status: 'uploaded'
             },
@@ -545,8 +580,8 @@ window.onload = function() {
                 id: 's2',
                 eventId: '1',
                 staffId: '2',
-                fullName: 'Trần Thị B',
-                idNumber: '987654321',
+                fullName: 'Đỗ Văn Nam',
+                idNumber: 'CMND_002',
                 timestamp: '2026-03-08T13:15:00Z',
                 status: 'uploaded'
             },
@@ -554,8 +589,8 @@ window.onload = function() {
                 id: 's3',
                 eventId: '2',
                 staffId: '3',
-                fullName: 'Lê Văn C',
-                idNumber: '456789123',
+                fullName: 'Nguyễn Chí Thanh',
+                idNumber: 'CMND_003',
                 timestamp: '2026-03-08T14:00:00Z',
                 status: 'uploaded'
             }
