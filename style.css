@@ -6,7 +6,7 @@
 }
 
 :root {
-    --primary: #d32f2f; /* Agribank red */
+    --primary: #d32f2f;
     --primary-dark: #b71c1c;
     --primary-light: #f44336;
     --secondary: #ffffff;
@@ -17,6 +17,7 @@
     --warning: #ff9800;
     --danger: #f44336;
     --gray: #f5f5f5;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 body {
@@ -32,7 +33,6 @@ body {
     padding: 0 20px;
 }
 
-/* Header Styles */
 .header {
     display: flex;
     justify-content: space-between;
@@ -73,17 +73,12 @@ body {
     transition: all 0.3s ease;
 }
 
-.nav a:hover {
-    background-color: var(--primary);
-    color: white;
-}
-
+.nav a:hover,
 .nav a.active {
     background-color: var(--primary);
     color: white;
 }
 
-/* Hero Section */
 .hero {
     text-align: center;
     padding: 60px 0;
@@ -112,14 +107,13 @@ body {
     gap: 20px;
 }
 
-/* Buttons */
 .btn {
     padding: 12px 30px;
     border-radius: 8px;
     font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     border: none;
     outline: none;
 }
@@ -163,7 +157,20 @@ body {
     background-color: #43a047;
 }
 
-/* Section Styles */
+.btn-danger {
+    background-color: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #d32f2f;
+}
+
+.btn-small {
+    padding: 10px 16px;
+    font-size: 0.92rem;
+}
+
 .section {
     margin-bottom: 60px;
 }
@@ -187,18 +194,26 @@ body {
     border-radius: 2px;
 }
 
-/* Events Grid */
-.events-grid {
+.events-grid,
+.progress-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 25px;
 }
 
-.event-card {
+.event-card,
+.progress-card,
+.admin-event-card,
+.admin-form-card,
+.upload-card,
+.admin-section {
     background: white;
     border-radius: 12px;
+    box-shadow: var(--shadow);
+}
+
+.event-card {
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -221,8 +236,9 @@ body {
 .event-meta {
     display: flex;
     justify-content: space-between;
+    gap: 10px;
     font-size: 0.9rem;
-    opacity: 0.9;
+    opacity: 0.92;
 }
 
 .event-body {
@@ -252,27 +268,32 @@ body {
     color: var(--danger);
 }
 
-.event-deadline {
+.status-info {
+    background-color: rgba(33, 150, 243, 0.12);
+    color: #1565c0;
+    border: 1px solid rgba(33, 150, 243, 0.2);
+}
+
+.event-deadline,
+.event-summary,
+.admin-event-meta {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 10px 18px;
     margin-top: 15px;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     color: var(--text-light);
 }
 
-/* Upload Section */
 .upload-card {
     display: flex;
     flex-wrap: wrap;
     gap: 30px;
-    background: white;
-    border-radius: 12px;
     padding: 30px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
-.upload-instructions {
+.upload-instructions,
+.upload-form {
     flex: 1;
     min-width: 300px;
 }
@@ -290,11 +311,6 @@ body {
 .upload-instructions li {
     margin-bottom: 12px;
     color: var(--text-light);
-}
-
-.upload-form {
-    flex: 1;
-    min-width: 300px;
 }
 
 .form-group {
@@ -317,7 +333,7 @@ body {
     border-radius: 8px;
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 1rem;
-    transition: border-color 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .form-group input:focus,
@@ -339,46 +355,80 @@ body {
     margin-top: 8px;
 }
 
-/* Admin Section */
 .admin-section {
-    background: white;
-    border-radius: 12px;
     padding: 30px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 .admin-panel {
-    max-width: 500px;
+    max-width: 520px;
     margin: 0 auto;
 }
 
-.admin-actions {
+.admin-actions,
+.admin-inline-actions,
+.admin-event-actions {
     display: flex;
-    gap: 15px;
-    margin-bottom: 30px;
     flex-wrap: wrap;
+    gap: 12px;
 }
 
-.progress-section {
-    margin-top: 40px;
+.admin-actions {
+    margin-bottom: 24px;
 }
 
-.progress-cards {
+.admin-form-card {
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid #f0d6d6;
+}
+
+.admin-form-hint {
+    color: var(--text-light);
+    margin-bottom: 18px;
+}
+
+.admin-list-section {
+    margin-bottom: 32px;
+}
+
+.admin-list-section h3,
+.progress-section h3 {
+    color: var(--primary);
+    margin-bottom: 16px;
+}
+
+.admin-events-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.admin-event-card {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
     gap: 20px;
+    align-items: flex-start;
+}
+
+.admin-event-card h4 {
+    color: var(--primary);
+    margin-bottom: 6px;
+}
+
+.admin-event-card p {
+    color: var(--text-light);
 }
 
 .progress-card {
-    background: var(--gray);
-    border-radius: 8px;
     padding: 20px;
+    background: var(--gray);
 }
 
 .progress-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     margin-bottom: 15px;
 }
 
@@ -388,23 +438,8 @@ body {
 }
 
 .progress-stats {
-    display: flex;
-    gap: 20px;
-    font-size: 0.9rem;
-}
-
-.stat-item {
-    text-align: center;
-}
-
-.stat-value {
-    font-weight: 700;
-    font-size: 1.2rem;
-    color: var(--primary);
-}
-
-.stat-label {
-    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
 }
 
 .progress-bar-container {
@@ -425,7 +460,26 @@ body {
     transition: width 0.5s ease;
 }
 
-/* Footer */
+.progress-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--primary);
+}
+
+.stat-label {
+    color: var(--text-light);
+}
+
 .footer {
     text-align: center;
     padding: 30px 0;
@@ -435,43 +489,8 @@ body {
     border-top: 1px solid var(--border);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        gap: 20px;
-    }
-    
-    .nav {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    
-    .upload-card {
-        flex-direction: column;
-    }
-    
-    .cta-buttons {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .hero h2 {
-        font-size: 2rem;
-    }
-    
-    .events-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Animation for upload status */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-#upload-status {
+#upload-status,
+#login-message {
     margin-top: 20px;
     padding: 15px;
     border-radius: 8px;
@@ -488,4 +507,41 @@ body {
     background-color: rgba(244, 67, 54, 0.15);
     color: var(--danger);
     border: 1px solid rgba(244, 67, 54, 0.3);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .nav {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .upload-card,
+    .admin-event-card {
+        flex-direction: column;
+    }
+
+    .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .hero h2 {
+        font-size: 2rem;
+    }
+
+    .events-grid,
+    .progress-cards,
+    .progress-grid {
+        grid-template-columns: 1fr;
+    }
 }
