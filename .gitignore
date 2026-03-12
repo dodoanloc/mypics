@@ -7,12 +7,16 @@ server.log
 
 # Environment variables
 .env
+!.env.example
 
 # Local storage files (for demo)
 agribank-mypics-data
 
 # Runtime data
 uploads/
+data/*.db
+/data/*.db-shm
+/data/*.db-wal
 node_modules/.package-lock.json
 script-backup*.js
 script-localstorage.js

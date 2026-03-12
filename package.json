@@ -1,6 +1,6 @@
 {
   "name": "agribank-mypics",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Hệ thống nộp ảnh kết quả thi cho Agribank Thọ Xuân",
   "main": "server.js",
   "scripts": {
@@ -10,7 +10,9 @@
     "test": "echo \"Test not implemented\""
   },
   "dependencies": {
+    "better-sqlite3": "^11.7.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "express": "^4.18.2",
     "multer": "^1.4.5-lts.1"
   },

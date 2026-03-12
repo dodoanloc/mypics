@@ -1,73 +1,134 @@
+require('dotenv').config();
+
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const Database = require('better-sqlite3');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'agribank2026';
+const DATA_DIR = path.join(__dirname, 'data');
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const DB_PATH = path.resolve(process.env.DB_PATH || path.join(DATA_DIR, 'mypics.db'));
+const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
+const SUBMISSIONS_FILE = path.join(DATA_DIR, 'submissions.json');
 
-// Cấu hình multer cho upload ảnh
+fs.mkdirSync(DATA_DIR, { recursive: true });
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const db = new Database(DB_PATH);
+db.pragma('journal_mode = WAL');
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS events (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  deadline TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS submissions (
+  id TEXT PRIMARY KEY,
+  eventId TEXT NOT NULL,
+  staffId TEXT NOT NULL,
+  fullName TEXT NOT NULL,
+  fileName TEXT NOT NULL,
+  filePath TEXT NOT NULL,
+  fileType TEXT NOT NULL,
+  fileSize INTEGER NOT NULL,
+  timestamp TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'uploaded',
+  FOREIGN KEY (eventId) REFERENCES events(id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_submissions_event_staff
+ON submissions(eventId, staffId);
+`);
+
+function readJsonArray(filePath) {
+  if (!fs.existsSync(filePath)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function migrateJsonToSqlite() {
+  const eventCount = db.prepare('SELECT COUNT(*) AS count FROM events').get().count;
+  const submissionCount = db.prepare('SELECT COUNT(*) AS count FROM submissions').get().count;
+
+  if (eventCount === 0) {
+    const events = readJsonArray(EVENTS_FILE);
+    const insertEvent = db.prepare(`
+      INSERT OR IGNORE INTO events (id, title, description, deadline, status, createdAt, updatedAt)
+      VALUES (@id, @title, @description, @deadline, @status, @createdAt, @updatedAt)
+    `);
+    const tx = db.transaction((items) => {
+      for (const event of items) {
+        insertEvent.run({
+          id: String(event.id),
+          title: event.title,
+          description: event.description || '',
+          deadline: event.deadline,
+          status: event.status || 'active',
+          createdAt: event.createdAt || new Date().toISOString(),
+          updatedAt: event.updatedAt || event.createdAt || new Date().toISOString()
+        });
+      }
+    });
+    tx(events);
+  }
+
+  if (submissionCount === 0) {
+    const submissions = readJsonArray(SUBMISSIONS_FILE);
+    const insertSubmission = db.prepare(`
+      INSERT OR IGNORE INTO submissions
+      (id, eventId, staffId, fullName, fileName, filePath, fileType, fileSize, timestamp, status)
+      VALUES (@id, @eventId, @staffId, @fullName, @fileName, @filePath, @fileType, @fileSize, @timestamp, @status)
+    `);
+    const tx = db.transaction((items) => {
+      for (const submission of items) {
+        insertSubmission.run({
+          id: String(submission.id),
+          eventId: String(submission.eventId),
+          staffId: String(submission.staffId),
+          fullName: submission.fullName,
+          fileName: submission.fileName || 'upload.jpg',
+          filePath: submission.filePath || '',
+          fileType: submission.fileType || 'image/jpeg',
+          fileSize: submission.fileSize || 0,
+          timestamp: submission.timestamp || new Date().toISOString(),
+          status: submission.status || 'uploaded'
+        });
+      }
+    });
+    tx(submissions.filter(item => item.filePath));
+  }
+}
+
+migrateJsonToSqlite();
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    cb(null, uniqueSuffix + ext);
+  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `${uniqueSuffix}${path.extname(file.originalname)}`);
   }
 });
 const upload = multer({ storage });
 
-// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('.')); // Serve frontend files
-app.use('/uploads', express.static('uploads'));
+app.use(express.static(__dirname));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
-// File paths
-const DATA_DIR = 'data';
-const EVENTS_FILE = path.join(DATA_DIR, 'events.json');
-const SUBMISSIONS_FILE = path.join(DATA_DIR, 'submissions.json');
-
-// Đảm bảo thư mục data tồn tại
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-
-// Đọc dữ liệu từ file
-function readEvents() {
-  if (!fs.existsSync(EVENTS_FILE)) return [];
-  const data = fs.readFileSync(EVENTS_FILE, 'utf8');
-  try {
-    return JSON.parse(data);
-  } catch (err) {
-    return [];
-  }
-}
-
-function readSubmissions() {
-  if (!fs.existsSync(SUBMISSIONS_FILE)) return [];
-  const data = fs.readFileSync(SUBMISSIONS_FILE, 'utf8');
-  try {
-    return JSON.parse(data);
-  } catch (err) {
-    return [];
-  }
-}
-
-// Ghi dữ liệu
-function writeEvents(events) {
-  fs.writeFileSync(EVENTS_FILE, JSON.stringify(events, null, 2), 'utf8');
-}
-
-function writeSubmissions(submissions) {
-  fs.writeFileSync(SUBMISSIONS_FILE, JSON.stringify(submissions, null, 2), 'utf8');
-}
-
-// Mật khẩu admin (có thể đổi trong tương lai)
-const ADMIN_PASSWORD = 'agribank2026';
-
-// Middleware kiểm tra đăng nhập admin
 function requireAdmin(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -80,99 +141,123 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// API đăng nhập admin
-app.post('/api/admin/login', (req, res) => {
-  const { password } = req.body;
-  if (password === ADMIN_PASSWORD) {
-    res.json({ success: true, token: ADMIN_PASSWORD });
-  } else {
-    res.status(401).json({ error: 'Invalid password' });
+function getEvents() {
+  return db.prepare('SELECT * FROM events ORDER BY deadline ASC, createdAt ASC').all();
+}
+
+function getSubmissions(eventId) {
+  if (eventId) {
+    return db.prepare('SELECT * FROM submissions WHERE eventId = ? ORDER BY timestamp DESC').all(String(eventId));
   }
+  return db.prepare('SELECT * FROM submissions ORDER BY timestamp DESC').all();
+}
+
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body || {};
+  if (password === ADMIN_PASSWORD) {
+    return res.json({ success: true, token: ADMIN_PASSWORD });
+  }
+  return res.status(401).json({ error: 'Invalid password' });
 });
 
-// API sự kiện (CRUD)
-app.get('/api/events', (req, res) => {
-  const events = readEvents();
-  res.json(events);
+app.get('/api/events', (_req, res) => {
+  res.json(getEvents());
 });
 
 app.post('/api/events', requireAdmin, (req, res) => {
-  const { title, description, deadline, status } = req.body;
+  const { title, description, deadline, status } = req.body || {};
   if (!title || !deadline) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-  const events = readEvents();
+
+  const now = new Date().toISOString();
   const newEvent = {
-    id: Date.now().toString(),
+    id: String(Date.now()),
     title,
     description: description || '',
     deadline,
     status: status || 'active',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: now,
+    updatedAt: now
   };
-  events.push(newEvent);
-  writeEvents(events);
+
+  db.prepare(`
+    INSERT INTO events (id, title, description, deadline, status, createdAt, updatedAt)
+    VALUES (@id, @title, @description, @deadline, @status, @createdAt, @updatedAt)
+  `).run(newEvent);
+
   res.status(201).json(newEvent);
 });
 
 app.put('/api/events/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
-  const { title, description, deadline, status } = req.body;
-  const events = readEvents();
-  const eventIndex = events.findIndex(e => e.id === id);
-  if (eventIndex === -1) {
+  const existing = db.prepare('SELECT * FROM events WHERE id = ?').get(String(id));
+  if (!existing) {
     return res.status(404).json({ error: 'Event not found' });
   }
-  const updatedEvent = {
-    ...events[eventIndex],
-    title: title || events[eventIndex].title,
-    description: description !== undefined ? description : events[eventIndex].description,
-    deadline: deadline || events[eventIndex].deadline,
-    status: status || events[eventIndex].status,
+
+  const { title, description, deadline, status } = req.body || {};
+  const updated = {
+    ...existing,
+    title: title || existing.title,
+    description: description !== undefined ? description : existing.description,
+    deadline: deadline || existing.deadline,
+    status: status || existing.status,
     updatedAt: new Date().toISOString()
   };
-  events[eventIndex] = updatedEvent;
-  writeEvents(events);
-  res.json(updatedEvent);
+
+  db.prepare(`
+    UPDATE events
+    SET title=@title, description=@description, deadline=@deadline, status=@status, updatedAt=@updatedAt
+    WHERE id=@id
+  `).run(updated);
+
+  res.json(updated);
 });
 
 app.delete('/api/events/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
-  const events = readEvents();
-  const eventIndex = events.findIndex(e => e.id === id);
-  if (eventIndex === -1) {
+  const event = db.prepare('SELECT * FROM events WHERE id = ?').get(String(id));
+  if (!event) {
     return res.status(404).json({ error: 'Event not found' });
   }
-  // Xóa các submissions liên quan
-  const submissions = readSubmissions();
-  const updatedSubmissions = submissions.filter(s => s.eventId !== id);
-  writeSubmissions(updatedSubmissions);
-  // Xóa sự kiện
-  events.splice(eventIndex, 1);
-  writeEvents(events);
+
+  const files = db.prepare('SELECT filePath FROM submissions WHERE eventId = ?').all(String(id));
+  const tx = db.transaction(() => {
+    db.prepare('DELETE FROM submissions WHERE eventId = ?').run(String(id));
+    db.prepare('DELETE FROM events WHERE id = ?').run(String(id));
+  });
+  tx();
+
+  for (const file of files) {
+    const target = path.join(UPLOADS_DIR, file.filePath);
+    if (file.filePath && fs.existsSync(target)) {
+      fs.unlinkSync(target);
+    }
+  }
+
   res.json({ success: true });
 });
 
-// API upload ảnh
 app.post('/api/upload', upload.single('image'), (req, res) => {
-  const { eventId, staffId, fullName } = req.body;
+  const { eventId, staffId, fullName } = req.body || {};
   const file = req.file;
+
   if (!eventId || !staffId || !fullName || !file) {
     return res.status(400).json({ error: 'Missing required fields or file' });
   }
-  const events = readEvents();
-  const event = events.find(e => e.id === eventId);
+
+  const event = db.prepare('SELECT * FROM events WHERE id = ?').get(String(eventId));
   if (!event || event.status !== 'active') {
+    if (file?.path && fs.existsSync(file.path)) fs.unlinkSync(file.path);
     return res.status(400).json({ error: 'Event not found or inactive' });
   }
-  const submissions = readSubmissions();
-  // Tìm submission đã tồn tại (cùng event và staff)
-  const existingIndex = submissions.findIndex(s => s.eventId === eventId && s.staffId === staffId);
-  const newSubmission = {
-    id: existingIndex >= 0 ? submissions[existingIndex].id : Date.now().toString(),
-    eventId,
-    staffId,
+
+  const existing = db.prepare('SELECT * FROM submissions WHERE eventId = ? AND staffId = ?').get(String(eventId), String(staffId));
+  const submission = {
+    id: existing ? existing.id : String(Date.now()),
+    eventId: String(eventId),
+    staffId: String(staffId),
     fullName,
     fileName: file.originalname,
     filePath: file.filename,
@@ -181,34 +266,34 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     timestamp: new Date().toISOString(),
     status: 'uploaded'
   };
-  if (existingIndex >= 0) {
-    // Xóa file cũ nếu có
-    const oldFile = submissions[existingIndex].filePath;
-    if (oldFile && fs.existsSync(path.join('uploads', oldFile))) {
-      fs.unlinkSync(path.join('uploads', oldFile));
-    }
-    submissions[existingIndex] = newSubmission;
-  } else {
-    submissions.push(newSubmission);
+
+  if (existing?.filePath) {
+    const oldFile = path.join(UPLOADS_DIR, existing.filePath);
+    if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
   }
-  writeSubmissions(submissions);
-  res.json(newSubmission);
+
+  db.prepare(`
+    INSERT INTO submissions (id, eventId, staffId, fullName, fileName, filePath, fileType, fileSize, timestamp, status)
+    VALUES (@id, @eventId, @staffId, @fullName, @fileName, @filePath, @fileType, @fileSize, @timestamp, @status)
+    ON CONFLICT(eventId, staffId) DO UPDATE SET
+      fullName=excluded.fullName,
+      fileName=excluded.fileName,
+      filePath=excluded.filePath,
+      fileType=excluded.fileType,
+      fileSize=excluded.fileSize,
+      timestamp=excluded.timestamp,
+      status=excluded.status
+  `).run(submission);
+
+  res.json(submission);
 });
 
-// API lấy danh sách submissions theo event
 app.get('/api/submissions', (req, res) => {
-  const { eventId } = req.query;
-  const submissions = readSubmissions();
-  let filtered = submissions;
-  if (eventId) {
-    filtered = submissions.filter(s => s.eventId === eventId);
-  }
-  res.json(filtered);
+  res.json(getSubmissions(req.query.eventId));
 });
 
-// API lấy danh sách staff (cố định)
-app.get('/api/staff', (req, res) => {
-  const staffList = [
+app.get('/api/staff', (_req, res) => {
+  res.json([
     { id: '1', name: 'Nguyễn Quốc Huy' },
     { id: '2', name: 'Đỗ Văn Nam' },
     { id: '3', name: 'Nguyễn Chí Thanh' },
@@ -252,16 +337,13 @@ app.get('/api/staff', (req, res) => {
     { id: '41', name: 'Đặng Thị Hảo' },
     { id: '42', name: 'Trần Thị Hồ Lan' },
     { id: '43', name: 'Phạm Văn Khoa' }
-  ];
-  res.json(staffList);
+  ]);
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString(), dbPath: DB_PATH });
 });
 
-// Khởi động server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
