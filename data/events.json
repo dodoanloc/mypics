@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1773245629219",
+    "title": "Kỳ Thi Chuyển Ngạch 2026",
+    "description": "Nộp kết quả thi chuyển ngạch năm 2026 cho nhân viên chi nhánh Thọ Xuân",
+    "deadline": "2026-06-30",
+    "status": "active",
+    "createdAt": "2026-03-11T16:13:49.219Z",
+    "updatedAt": "2026-03-11T16:13:49.219Z"
+  },
+  {
+    "id": "1773245763054",
+    "title": "Thi Nâng Bậc Chuyên Viên",
+    "description": "Nộp kết quả thi nâng bậc chuyên viên năm 2026",
+    "deadline": "2026-07-15",
+    "status": "active",
+    "createdAt": "2026-03-11T16:16:03.054Z",
+    "updatedAt": "2026-03-11T16:16:03.054Z"
+  }
+]

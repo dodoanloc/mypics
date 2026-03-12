@@ -3,12 +3,20 @@ node_modules/
 
 # Logs
 *.log
+server.log
 
 # Environment variables
 .env
 
 # Local storage files (for demo)
 agribank-mypics-data
+
+# Runtime data
+uploads/
+node_modules/.package-lock.json
+script-backup*.js
+script-localstorage.js
+script-new.js
 
 # IDE files
 .vscode/

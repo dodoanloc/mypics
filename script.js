@@ -1,13 +1,11 @@
-const STORAGE_KEY = 'agribank-mypics-data';
+const API_BASE = '';
 
 const app = {
     events: [],
     submissions: [],
     isAdmin: false,
     editingEventId: null,
-    adminCredentials: {
-        password: 'agribank2026'
-    }
+    adminToken: null
 };
 
 const elements = {
@@ -85,12 +83,71 @@ const staffList = [
     { id: '43', name: 'Phạm Văn Khoa' }
 ];
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadFromStorage();
+async function apiFetch(endpoint, options = {}) {
+    const headers = {
+        ...(app.adminToken && { Authorization: `Bearer ${app.adminToken}` }),
+        ...(options.headers || {})
+    };
+
+    if (!(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+    }
+
+    const response = await fetch(`${API_BASE}/api${endpoint}`, {
+        ...options,
+        headers
+    });
+
+    if (!response.ok) {
+        let errorMessage = `API error ${response.status}`;
+        try {
+            const data = await response.json();
+            errorMessage = data.error || data.message || errorMessage;
+        } catch {
+            errorMessage = await response.text() || errorMessage;
+        }
+        throw new Error(errorMessage);
+    }
+
+    return response.json();
+}
+
+async function loadData() {
+    const [events, submissions] = await Promise.all([
+        apiFetch('/events'),
+        apiFetch('/submissions')
+    ]);
+    app.events = events;
+    app.submissions = submissions;
+}
+
+async function uploadImage(formData) {
+    return apiFetch('/upload', {
+        method: 'POST',
+        body: formData
+    });
+}
+
+async function loginAdmin(password) {
+    const response = await apiFetch('/admin/login', {
+        method: 'POST',
+        body: JSON.stringify({ password })
+    });
+    return response.token;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
     populateStaffSelect();
     setupEventListeners();
-    renderAll();
     checkAdminStatus();
+
+    try {
+        await loadData();
+        renderAll();
+    } catch (error) {
+        console.error(error);
+        showStatus('Không thể tải dữ liệu từ server.', 'error');
+    }
 });
 
 function setupEventListeners() {
@@ -99,7 +156,7 @@ function setupEventListeners() {
     elements.loginBtn.addEventListener('click', handleAdminLogin);
     elements.createEventBtn.addEventListener('click', startCreateEvent);
     elements.cancelEventBtn.addEventListener('click', cancelEventForm);
-    elements.saveEventBtn.addEventListener('click', saveEvent);
+    elements.saveEventBtn.addEventListener('click', saveEventHandler);
     elements.downloadAllBtn.addEventListener('click', downloadAllImages);
 
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -128,7 +185,7 @@ function handleFileSelect(e) {
         : 'Chưa chọn tệp';
 }
 
-function handleUpload() {
+async function handleUpload() {
     const eventId = elements.eventSelect.value;
     const file = elements.uploadFile.files[0];
     const staffId = elements.staffSelect.value;
@@ -143,45 +200,26 @@ function handleUpload() {
     }
 
     const staff = staffList.find(s => s.id === staffId);
-    const reader = new FileReader();
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('eventId', eventId);
+    formData.append('staffId', staffId);
+    formData.append('fullName', staff?.name || '');
+
     showStatus('Đang tải ảnh lên...', 'info');
 
-    reader.onload = () => {
-        const existingIndex = app.submissions.findIndex(
-            submission => submission.eventId === eventId && submission.staffId === staffId
-        );
-
-        const submission = {
-            id: existingIndex >= 0 ? app.submissions[existingIndex].id : Date.now().toString(),
-            eventId,
-            staffId,
-            fullName: staff?.name || '',
-            fileName: file.name,
-            fileType: file.type,
-            fileSize: file.size,
-            imageData: reader.result,
-            timestamp: new Date().toISOString(),
-            status: 'uploaded'
-        };
-
-        if (existingIndex >= 0) {
-            app.submissions[existingIndex] = submission;
-        } else {
-            app.submissions.push(submission);
-        }
-
-        saveToStorage();
+    try {
+        await uploadImage(formData);
+        app.submissions = await apiFetch('/submissions');
         renderAll();
         showStatus('Tải ảnh thành công!', 'success');
-
         elements.uploadFile.value = '';
         elements.staffSelect.value = '';
         elements.eventSelect.value = '';
         elements.fileInfo.textContent = 'Chưa chọn tệp';
-    };
-
-    reader.onerror = () => showStatus('Không thể đọc tệp ảnh. Vui lòng thử lại.', 'error');
-    reader.readAsDataURL(file);
+    } catch (error) {
+        showStatus(`Upload thất bại: ${error.message}`, 'error');
+    }
 }
 
 function showStatus(message, type, target = elements.uploadStatus) {
@@ -204,15 +242,12 @@ function renderAll() {
 
 function renderEvents() {
     const totalStaff = staffList.length;
-    let html = '';
-
-    app.events
+    const html = [...app.events]
         .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
-        .forEach(event => {
+        .map(event => {
             const eventSubmissions = app.submissions.filter(s => s.eventId === event.id);
             const progress = Math.round((eventSubmissions.length / totalStaff) * 100);
-
-            html += `
+            return `
                 <div class="event-card">
                     <div class="event-header">
                         <h3>${escapeHtml(event.title)}</h3>
@@ -237,14 +272,15 @@ function renderEvents() {
                     </div>
                 </div>
             `;
-        });
+        })
+        .join('');
 
     elements.eventsList.innerHTML = html || '<p>Hiện chưa có sự kiện nào. Vui lòng chờ quản trị viên tạo sự kiện.</p>';
 }
 
 function renderEventSelect() {
     let options = '<option value="">-- Chọn sự kiện --</option>';
-    app.events
+    [...app.events]
         .filter(event => event.status === 'active')
         .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
         .forEach(event => {
@@ -259,10 +295,10 @@ function checkAdminStatus() {
     elements.adminDashboard.style.display = 'none';
 }
 
-function handleAdminLogin() {
+async function handleAdminLogin() {
     const password = elements.adminPassword.value;
-
-    if (password === app.adminCredentials.password) {
+    try {
+        app.adminToken = await loginAdmin(password);
         app.isAdmin = true;
         elements.loginMessage.textContent = 'Đăng nhập thành công!';
         elements.loginMessage.className = 'status-success';
@@ -271,11 +307,10 @@ function handleAdminLogin() {
         elements.adminPassword.value = '';
         renderAdminEvents();
         updateProgress();
-        return;
+    } catch {
+        elements.loginMessage.textContent = 'Mật khẩu không đúng!';
+        elements.loginMessage.className = 'status-error';
     }
-
-    elements.loginMessage.textContent = 'Mật khẩu không đúng!';
-    elements.loginMessage.className = 'status-error';
 }
 
 function startCreateEvent() {
@@ -292,7 +327,6 @@ function startCreateEvent() {
 function startEditEvent(eventId) {
     const event = app.events.find(item => item.id === eventId);
     if (!event) return;
-
     app.editingEventId = eventId;
     elements.formTitle.textContent = 'Chỉnh Sửa Sự Kiện';
     elements.formHint.textContent = 'Cập nhật nội dung rồi nhấn Lưu Sự Kiện.';
@@ -309,7 +343,7 @@ function cancelEventForm() {
     elements.createEventForm.style.display = 'none';
 }
 
-function saveEvent() {
+async function saveEventHandler() {
     const title = elements.eventTitle.value.trim();
     const description = elements.eventDescription.value.trim();
     const deadline = elements.eventDeadline.value;
@@ -318,57 +352,47 @@ function saveEvent() {
     if (!title) return showStatus('Vui lòng nhập tiêu đề sự kiện!', 'error');
     if (!deadline) return showStatus('Vui lòng chọn ngày hết hạn!', 'error');
 
-    if (app.editingEventId) {
-        const event = app.events.find(item => item.id === app.editingEventId);
-        if (!event) return;
-
-        event.title = title;
-        event.description = description;
-        event.deadline = deadline;
-        event.status = status;
-        event.updatedAt = new Date().toISOString();
-        showStatus('Đã cập nhật sự kiện thành công!', 'success');
-    } else {
-        app.events.push({
-            id: Date.now().toString(),
-            title,
-            description,
-            deadline,
-            status,
-            createdAt: new Date().toISOString()
+    try {
+        const method = app.editingEventId ? 'PUT' : 'POST';
+        const endpoint = app.editingEventId ? `/events/${app.editingEventId}` : '/events';
+        await apiFetch(endpoint, {
+            method,
+            body: JSON.stringify({ title, description, deadline, status })
         });
-        showStatus('Đã tạo sự kiện thành công!', 'success');
+        await loadData();
+        renderAll();
+        showStatus(app.editingEventId ? 'Đã cập nhật sự kiện thành công!' : 'Đã tạo sự kiện thành công!', 'success');
+        cancelEventForm();
+    } catch (error) {
+        showStatus(`Lỗi khi lưu sự kiện: ${error.message}`, 'error');
     }
-
-    saveToStorage();
-    renderAll();
-    cancelEventForm();
 }
 
-function deleteEvent(eventId) {
+async function deleteEventHandler(eventId) {
     const event = app.events.find(item => item.id === eventId);
     if (!event) return;
-
     const confirmed = window.confirm(`Xoá sự kiện "${event.title}"? Toàn bộ ảnh đã nộp theo sự kiện này cũng sẽ bị xoá.`);
     if (!confirmed) return;
 
-    app.events = app.events.filter(item => item.id !== eventId);
-    app.submissions = app.submissions.filter(item => item.eventId !== eventId);
-    saveToStorage();
-    renderAll();
-    showStatus('Đã xoá sự kiện thành công!', 'success');
+    try {
+        await apiFetch(`/events/${eventId}`, { method: 'DELETE' });
+        await loadData();
+        renderAll();
+        showStatus('Đã xoá sự kiện thành công!', 'success');
+    } catch (error) {
+        showStatus(`Lỗi khi xoá sự kiện: ${error.message}`, 'error');
+    }
 }
 
 function renderAdminEvents() {
     if (!elements.adminEventsList) return;
-
     if (!app.events.length) {
         elements.adminEventsList.innerHTML = '<p>Chưa có sự kiện nào.</p>';
         return;
     }
 
     const totalStaff = staffList.length;
-    elements.adminEventsList.innerHTML = app.events
+    elements.adminEventsList.innerHTML = [...app.events]
         .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
         .map(event => {
             const eventSubmissions = app.submissions.filter(item => item.eventId === event.id);
@@ -397,7 +421,7 @@ function renderAdminEvents() {
         button.addEventListener('click', () => {
             const { action, id } = button.dataset;
             if (action === 'edit') startEditEvent(id);
-            if (action === 'delete') deleteEvent(id);
+            if (action === 'delete') deleteEventHandler(id);
             if (action === 'download') downloadImagesByEvent(id);
         });
     });
@@ -406,9 +430,8 @@ function renderAdminEvents() {
 function updateProgress() {
     if (!elements.progressCards) return;
     const totalStaff = staffList.length;
-
     elements.progressCards.innerHTML = app.events.length
-        ? app.events
+        ? [...app.events]
             .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
             .map(event => {
                 const eventSubmissions = app.submissions.filter(item => item.eventId === event.id);
@@ -453,8 +476,7 @@ function downloadAllImages() {
 
 function downloadImagesByEvent(eventId, silent = false) {
     const event = app.events.find(item => item.id === eventId);
-    const eventSubmissions = app.submissions.filter(item => item.eventId === eventId && item.imageData);
-
+    const eventSubmissions = app.submissions.filter(item => item.eventId === eventId && item.filePath);
     if (!event || !eventSubmissions.length) {
         if (!silent) showStatus('Sự kiện này chưa có ảnh nào để tải!', 'error');
         return;
@@ -463,61 +485,15 @@ function downloadImagesByEvent(eventId, silent = false) {
     eventSubmissions.forEach((submission, index) => {
         setTimeout(() => {
             const link = document.createElement('a');
-            link.href = submission.imageData;
-            const extension = getExtension(submission.fileName, submission.fileType);
-            link.download = `${slugify(event.title)}-${slugify(submission.fullName)}-${index + 1}.${extension}`;
+            link.href = `/uploads/${submission.filePath}`;
+            link.download = `${slugify(event.title)}-${slugify(submission.fullName)}-${index + 1}.${getExtension(submission.fileName, submission.fileType)}`;
             document.body.appendChild(link);
             link.click();
             link.remove();
         }, index * 200);
     });
 
-    if (!silent) {
-        showStatus(`Đang tải ${eventSubmissions.length} ảnh của sự kiện "${event.title}".`, 'success');
-    }
-}
-
-function loadFromStorage() {
-    try {
-        const savedData = localStorage.getItem(STORAGE_KEY);
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            app.events = Array.isArray(data.events) ? data.events : [];
-            app.submissions = Array.isArray(data.submissions) ? data.submissions : [];
-            return;
-        }
-    } catch (error) {
-        console.error('Error loading data:', error);
-    }
-
-    app.events = [
-        {
-            id: '1',
-            title: 'Kỳ Thi Chuyển Ngạch 2026',
-            description: 'Nộp kết quả thi chuyển ngạch năm 2026 cho nhân viên chi nhánh Thọ Xuân',
-            deadline: '2026-06-30',
-            status: 'active',
-            createdAt: '2026-03-08T10:00:00Z'
-        },
-        {
-            id: '2',
-            title: 'Thi Nâng Bậc Chuyên Viên',
-            description: 'Nộp kết quả thi nâng bậc chuyên viên năm 2026',
-            deadline: '2026-07-15',
-            status: 'active',
-            createdAt: '2026-03-08T10:00:00Z'
-        }
-    ];
-
-    app.submissions = [];
-    saveToStorage();
-}
-
-function saveToStorage() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        events: app.events,
-        submissions: app.submissions
-    }));
+    if (!silent) showStatus(`Đang tải ${eventSubmissions.length} ảnh của sự kiện "${event.title}".`, 'success');
 }
 
 function formatDate(value) {
