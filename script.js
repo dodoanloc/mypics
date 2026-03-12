@@ -293,6 +293,11 @@ function checkAdminStatus() {
     elements.adminLink.style.display = 'inline-block';
     elements.adminLogin.style.display = 'block';
     elements.adminDashboard.style.display = 'none';
+
+    const adminSection = document.getElementById('admin');
+    if (adminSection) {
+        adminSection.style.display = 'block';
+    }
 }
 
 async function handleAdminLogin() {
