@@ -135,7 +135,17 @@ async function handleLogin() {
         renderAll();
         showAdmin();
     } catch (error) {
-        showMessage(elements.loginMessage, 'Mật khẩu không đúng!', 'error');
+        const message = String(error?.message || '');
+        if (message.toLowerCase().includes('invalid password')) {
+            showMessage(elements.loginMessage, 'Mật khẩu không đúng!', 'error');
+            return;
+        }
+
+        showMessage(
+            elements.loginMessage,
+            'Không kết nối được backend hoặc máy chủ chưa chạy.',
+            'error'
+        );
     }
 }
 
