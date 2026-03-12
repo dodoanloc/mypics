@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agribank Thọ Xuân - Quản Trị</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">🏦</div>
+                <h1>Agribank Thọ Xuân</h1>
+            </div>
+            <nav class="nav">
+                <a href="index.html">Trang Chủ</a>
+                <a href="index.html#events">Sự Kiện</a>
+                <a href="index.html#upload">Nộp Ảnh</a>
+                <a href="admin.html" class="active">Quản Trị</a>
+            </nav>
+        </header>
+
+        <section class="section admin-section standalone-admin">
+            <h2>Quản Trị Hệ Thống</h2>
+
+            <div id="admin-login" class="admin-panel">
+                <h3>Đăng Nhập Quản Trị</h3>
+                <div class="form-group">
+                    <label for="admin-password">Mật khẩu quản trị:</label>
+                    <input type="password" id="admin-password" placeholder="Nhập mật khẩu quản trị">
+                </div>
+                <button id="login-btn" class="btn btn-primary">Đăng Nhập</button>
+                <div id="login-message"></div>
+            </div>
+
+            <div id="admin-dashboard" style="display: none;">
+                <div class="admin-actions">
+                    <button id="create-event-btn" class="btn btn-secondary">Tạo Sự Kiện Mới</button>
+                    <button id="download-all-btn" class="btn btn-success">Tải Xuống Tất Cả Ảnh</button>
+                    <button id="logout-btn" class="btn btn-outline">Đăng Xuất</button>
+                </div>
+
+                <div id="create-event-form" class="admin-form-card" style="display: none;">
+                    <h3 id="admin-form-title">Tạo Sự Kiện Mới</h3>
+                    <p id="admin-form-hint" class="admin-form-hint">Nhập thông tin sự kiện để tạo mới.</p>
+                    <div class="form-group">
+                        <label for="event-title">Tiêu đề Sự Kiện:</label>
+                        <input type="text" id="event-title" placeholder="Ví dụ: Kỳ Thi Năm 2026">
+                    </div>
+                    <div class="form-group">
+                        <label for="event-description">Mô tả:</label>
+                        <textarea id="event-description" placeholder="Mô tả sự kiện..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-deadline">Ngày Hết Hạn:</label>
+                        <input type="date" id="event-deadline">
+                    </div>
+                    <div class="form-group">
+                        <label for="event-status">Trạng thái:</label>
+                        <select id="event-status">
+                            <option value="active">Đang hoạt động</option>
+                            <option value="closed">Đã đóng</option>
+                        </select>
+                    </div>
+                    <div class="admin-inline-actions">
+                        <button id="save-event-btn" class="btn btn-primary">Lưu Sự Kiện</button>
+                        <button id="cancel-event-btn" class="btn btn-outline">Huỷ</button>
+                    </div>
+                </div>
+
+                <div class="admin-list-section">
+                    <h3>Danh Sách Sự Kiện</h3>
+                    <div id="admin-events-list" class="admin-events-list"></div>
+                </div>
+
+                <div class="progress-section">
+                    <h3>Tiến Độ Nộp Ảnh</h3>
+                    <div id="progress-cards" class="progress-cards"></div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p>&copy; 2026 Agribank Chi nhánh Thọ Xuân. Mọi quyền được bảo lưu.</p>
+        </footer>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,11 +1,6 @@
-const API_BASE = '';
-
 const app = {
     events: [],
-    submissions: [],
-    isAdmin: false,
-    editingEventId: null,
-    adminToken: null
+    submissions: []
 };
 
 const elements = {
@@ -15,26 +10,7 @@ const elements = {
     fileInfo: document.getElementById('file-info'),
     staffSelect: document.getElementById('staff-select'),
     submitBtn: document.getElementById('submit-btn'),
-    uploadStatus: document.getElementById('upload-status'),
-    adminLink: document.getElementById('admin-link'),
-    adminLogin: document.getElementById('admin-login'),
-    adminDashboard: document.getElementById('admin-dashboard'),
-    adminPassword: document.getElementById('admin-password'),
-    loginBtn: document.getElementById('login-btn'),
-    loginMessage: document.getElementById('login-message'),
-    createEventBtn: document.getElementById('create-event-btn'),
-    createEventForm: document.getElementById('create-event-form'),
-    saveEventBtn: document.getElementById('save-event-btn'),
-    cancelEventBtn: document.getElementById('cancel-event-btn'),
-    eventTitle: document.getElementById('event-title'),
-    eventDescription: document.getElementById('event-description'),
-    eventDeadline: document.getElementById('event-deadline'),
-    eventStatus: document.getElementById('event-status'),
-    downloadAllBtn: document.getElementById('download-all-btn'),
-    progressCards: document.getElementById('progress-cards'),
-    adminEventsList: document.getElementById('admin-events-list'),
-    formTitle: document.getElementById('admin-form-title'),
-    formHint: document.getElementById('admin-form-hint')
+    uploadStatus: document.getElementById('upload-status')
 };
 
 const staffList = [
@@ -84,20 +60,11 @@ const staffList = [
 ];
 
 async function apiFetch(endpoint, options = {}) {
-    const headers = {
-        ...(app.adminToken && { Authorization: `Bearer ${app.adminToken}` }),
-        ...(options.headers || {})
-    };
-
+    const headers = { ...(options.headers || {}) };
     if (!(options.body instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
     }
-
-    const response = await fetch(`${API_BASE}/api${endpoint}`, {
-        ...options,
-        headers
-    });
-
+    const response = await fetch(`/api${endpoint}`, { ...options, headers });
     if (!response.ok) {
         let errorMessage = `API error ${response.status}`;
         try {
@@ -108,7 +75,6 @@ async function apiFetch(endpoint, options = {}) {
         }
         throw new Error(errorMessage);
     }
-
     return response.json();
 }
 
@@ -121,43 +87,9 @@ async function loadData() {
     app.submissions = submissions;
 }
 
-async function uploadImage(formData) {
-    return apiFetch('/upload', {
-        method: 'POST',
-        body: formData
-    });
-}
-
-async function loginAdmin(password) {
-    const response = await apiFetch('/admin/login', {
-        method: 'POST',
-        body: JSON.stringify({ password })
-    });
-    return response.token;
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-    populateStaffSelect();
-    setupEventListeners();
-    checkAdminStatus();
-
-    try {
-        await loadData();
-        renderAll();
-    } catch (error) {
-        console.error(error);
-        showStatus('Không thể tải dữ liệu từ server.', 'error');
-    }
-});
-
 function setupEventListeners() {
     elements.uploadFile.addEventListener('change', handleFileSelect);
     elements.submitBtn.addEventListener('click', handleUpload);
-    elements.loginBtn.addEventListener('click', handleAdminLogin);
-    elements.createEventBtn.addEventListener('click', startCreateEvent);
-    elements.cancelEventBtn.addEventListener('click', cancelEventForm);
-    elements.saveEventBtn.addEventListener('click', saveEventHandler);
-    elements.downloadAllBtn.addEventListener('click', downloadAllImages);
 
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
@@ -209,7 +141,7 @@ async function handleUpload() {
     showStatus('Đang tải ảnh lên...', 'info');
 
     try {
-        await uploadImage(formData);
+        await apiFetch('/upload', { method: 'POST', body: formData });
         app.submissions = await apiFetch('/submissions');
         renderAll();
         showStatus('Tải ảnh thành công!', 'success');
@@ -222,22 +154,9 @@ async function handleUpload() {
     }
 }
 
-function showStatus(message, type, target = elements.uploadStatus) {
-    target.textContent = message;
-    target.className = `status-${type}`;
-    setTimeout(() => {
-        if (target.textContent === message) {
-            target.textContent = '';
-            target.className = '';
-        }
-    }, 5000);
-}
-
 function renderAll() {
     renderEvents();
     renderEventSelect();
-    updateProgress();
-    renderAdminEvents();
 }
 
 function renderEvents() {
@@ -289,231 +208,19 @@ function renderEventSelect() {
     elements.eventSelect.innerHTML = options;
 }
 
-function checkAdminStatus() {
-    elements.adminLink.style.display = 'inline-block';
-    elements.adminLogin.style.display = 'block';
-    elements.adminDashboard.style.display = 'none';
-
-    const adminSection = document.getElementById('admin');
-    if (adminSection) {
-        adminSection.style.display = 'block';
-    }
-}
-
-async function handleAdminLogin() {
-    const password = elements.adminPassword.value;
-    try {
-        app.adminToken = await loginAdmin(password);
-        app.isAdmin = true;
-        elements.loginMessage.textContent = 'Đăng nhập thành công!';
-        elements.loginMessage.className = 'status-success';
-        elements.adminLogin.style.display = 'none';
-        elements.adminDashboard.style.display = 'block';
-        elements.adminPassword.value = '';
-        renderAdminEvents();
-        updateProgress();
-    } catch {
-        elements.loginMessage.textContent = 'Mật khẩu không đúng!';
-        elements.loginMessage.className = 'status-error';
-    }
-}
-
-function startCreateEvent() {
-    app.editingEventId = null;
-    elements.formTitle.textContent = 'Tạo Sự Kiện Mới';
-    elements.formHint.textContent = 'Nhập thông tin sự kiện để tạo mới.';
-    elements.eventTitle.value = '';
-    elements.eventDescription.value = '';
-    elements.eventDeadline.value = '';
-    elements.eventStatus.value = 'active';
-    elements.createEventForm.style.display = 'block';
-}
-
-function startEditEvent(eventId) {
-    const event = app.events.find(item => item.id === eventId);
-    if (!event) return;
-    app.editingEventId = eventId;
-    elements.formTitle.textContent = 'Chỉnh Sửa Sự Kiện';
-    elements.formHint.textContent = 'Cập nhật nội dung rồi nhấn Lưu Sự Kiện.';
-    elements.eventTitle.value = event.title;
-    elements.eventDescription.value = event.description || '';
-    elements.eventDeadline.value = event.deadline;
-    elements.eventStatus.value = event.status;
-    elements.createEventForm.style.display = 'block';
-    elements.createEventForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function cancelEventForm() {
-    app.editingEventId = null;
-    elements.createEventForm.style.display = 'none';
-}
-
-async function saveEventHandler() {
-    const title = elements.eventTitle.value.trim();
-    const description = elements.eventDescription.value.trim();
-    const deadline = elements.eventDeadline.value;
-    const status = elements.eventStatus.value;
-
-    if (!title) return showStatus('Vui lòng nhập tiêu đề sự kiện!', 'error');
-    if (!deadline) return showStatus('Vui lòng chọn ngày hết hạn!', 'error');
-
-    try {
-        const method = app.editingEventId ? 'PUT' : 'POST';
-        const endpoint = app.editingEventId ? `/events/${app.editingEventId}` : '/events';
-        await apiFetch(endpoint, {
-            method,
-            body: JSON.stringify({ title, description, deadline, status })
-        });
-        await loadData();
-        renderAll();
-        showStatus(app.editingEventId ? 'Đã cập nhật sự kiện thành công!' : 'Đã tạo sự kiện thành công!', 'success');
-        cancelEventForm();
-    } catch (error) {
-        showStatus(`Lỗi khi lưu sự kiện: ${error.message}`, 'error');
-    }
-}
-
-async function deleteEventHandler(eventId) {
-    const event = app.events.find(item => item.id === eventId);
-    if (!event) return;
-    const confirmed = window.confirm(`Xoá sự kiện "${event.title}"? Toàn bộ ảnh đã nộp theo sự kiện này cũng sẽ bị xoá.`);
-    if (!confirmed) return;
-
-    try {
-        await apiFetch(`/events/${eventId}`, { method: 'DELETE' });
-        await loadData();
-        renderAll();
-        showStatus('Đã xoá sự kiện thành công!', 'success');
-    } catch (error) {
-        showStatus(`Lỗi khi xoá sự kiện: ${error.message}`, 'error');
-    }
-}
-
-function renderAdminEvents() {
-    if (!elements.adminEventsList) return;
-    if (!app.events.length) {
-        elements.adminEventsList.innerHTML = '<p>Chưa có sự kiện nào.</p>';
-        return;
-    }
-
-    const totalStaff = staffList.length;
-    elements.adminEventsList.innerHTML = [...app.events]
-        .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
-        .map(event => {
-            const eventSubmissions = app.submissions.filter(item => item.eventId === event.id);
-            return `
-                <div class="admin-event-card">
-                    <div>
-                        <h4>${escapeHtml(event.title)}</h4>
-                        <p>${escapeHtml(event.description || 'Không có mô tả')}</p>
-                        <div class="admin-event-meta">
-                            <span>Hạn: ${formatDate(event.deadline)}</span>
-                            <span>${event.status === 'active' ? 'Đang hoạt động' : 'Đã đóng'}</span>
-                            <span>${eventSubmissions.length}/${totalStaff} người đã nộp</span>
-                        </div>
-                    </div>
-                    <div class="admin-event-actions">
-                        <button class="btn btn-outline btn-small" data-action="edit" data-id="${event.id}">Sửa</button>
-                        <button class="btn btn-danger btn-small" data-action="delete" data-id="${event.id}">Xoá</button>
-                        <button class="btn btn-success btn-small" data-action="download" data-id="${event.id}">Tải ảnh</button>
-                    </div>
-                </div>
-            `;
-        })
-        .join('');
-
-    elements.adminEventsList.querySelectorAll('button').forEach(button => {
-        button.addEventListener('click', () => {
-            const { action, id } = button.dataset;
-            if (action === 'edit') startEditEvent(id);
-            if (action === 'delete') deleteEventHandler(id);
-            if (action === 'download') downloadImagesByEvent(id);
-        });
-    });
-}
-
-function updateProgress() {
-    if (!elements.progressCards) return;
-    const totalStaff = staffList.length;
-    elements.progressCards.innerHTML = app.events.length
-        ? [...app.events]
-            .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
-            .map(event => {
-                const eventSubmissions = app.submissions.filter(item => item.eventId === event.id);
-                const progress = Math.round((eventSubmissions.length / totalStaff) * 100);
-                return `
-                    <div class="progress-card">
-                        <div class="progress-header">
-                            <h3 class="progress-title">${escapeHtml(event.title)}</h3>
-                            <span class="progress-stats">${eventSubmissions.length}/${totalStaff}</span>
-                        </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progress}%"></div>
-                            </div>
-                        </div>
-                        <div class="progress-grid">
-                            <div class="stat-item">
-                                <div class="stat-value">${progress}%</div>
-                                <div class="stat-label">Tiến độ</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">${eventSubmissions.length}</div>
-                                <div class="stat-label">Đã nộp</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">${totalStaff - eventSubmissions.length}</div>
-                                <div class="stat-label">Chưa nộp</div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            })
-            .join('')
-        : '<p>Chưa có sự kiện nào để theo dõi tiến độ.</p>';
-}
-
-function downloadAllImages() {
-    if (!app.submissions.length) return showStatus('Chưa có ảnh nào để tải xuống!', 'error');
-    app.events.forEach(event => downloadImagesByEvent(event.id, true));
-    showStatus('Đã bắt đầu tải ảnh theo từng sự kiện.', 'success');
-}
-
-function downloadImagesByEvent(eventId, silent = false) {
-    const event = app.events.find(item => item.id === eventId);
-    const eventSubmissions = app.submissions.filter(item => item.eventId === eventId && item.filePath);
-    if (!event || !eventSubmissions.length) {
-        if (!silent) showStatus('Sự kiện này chưa có ảnh nào để tải!', 'error');
-        return;
-    }
-
-    eventSubmissions.forEach((submission, index) => {
-        setTimeout(() => {
-            const link = document.createElement('a');
-            link.href = `/uploads/${submission.filePath}`;
-            link.download = `${slugify(event.title)}-${slugify(submission.fullName)}-${index + 1}.${getExtension(submission.fileName, submission.fileType)}`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        }, index * 200);
-    });
-
-    if (!silent) showStatus(`Đang tải ${eventSubmissions.length} ảnh của sự kiện "${event.title}".`, 'success');
+function showStatus(message, type) {
+    elements.uploadStatus.textContent = message;
+    elements.uploadStatus.className = `status-${type}`;
+    setTimeout(() => {
+        if (elements.uploadStatus.textContent === message) {
+            elements.uploadStatus.textContent = '';
+            elements.uploadStatus.className = '';
+        }
+    }, 5000);
 }
 
 function formatDate(value) {
     return new Date(value).toLocaleDateString('vi-VN');
-}
-
-function slugify(value) {
-    return value
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/đ/g, 'd')
-        .replace(/Đ/g, 'D')
-        .replace(/[^a-zA-Z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .toLowerCase();
 }
 
 function escapeHtml(value) {
@@ -525,11 +232,14 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
-function getExtension(fileName = '', fileType = '') {
-    const fromName = fileName.split('.').pop();
-    if (fromName && fromName !== fileName) return fromName;
-    if (fileType.includes('png')) return 'png';
-    if (fileType.includes('jpeg')) return 'jpg';
-    if (fileType.includes('webp')) return 'webp';
-    return 'jpg';
-}
+document.addEventListener('DOMContentLoaded', async () => {
+    populateStaffSelect();
+    setupEventListeners();
+    try {
+        await loadData();
+        renderAll();
+    } catch (error) {
+        console.error(error);
+        showStatus('Không thể tải dữ liệu từ server.', 'error');
+    }
+});

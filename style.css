@@ -359,6 +359,10 @@ body {
     padding: 30px;
 }
 
+.standalone-admin {
+    min-height: 60vh;
+}
+
 .admin-panel {
     max-width: 520px;
     margin: 0 auto;
